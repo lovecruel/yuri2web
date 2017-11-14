@@ -9,7 +9,7 @@ Web Server application.
 
 ## Version
 
-0.0.1
+0.0.2
 
 ## Progress
 
@@ -20,7 +20,8 @@ The official version is going to be online.
 
 ## Get Start
 
-`npm install yuri2web`
+Install modules `npm install yuri2js yuri2web`
+
 
 ## Global Orders
 
@@ -32,4 +33,10 @@ The official version is going to be online.
 
 ## ChangeLog
 
+### v0.0.2
+
+* Panel for management.
+
 ### v0.0.1
+
+* Construction of multi process framework

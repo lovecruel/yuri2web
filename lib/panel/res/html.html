@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Yuri2web Panel</title>
+    <script src="jquery-2.2.4.min.js/?token=${token}"></script>
+    <script src="vue.min.js/?token=${token}"></script>
+    <link rel="stylesheet" href="./main.css/?token=${token}"/>
+</head>
+<body>
+<div id="app">
+    <div class="left">
+        <div class="cps">
+            <div v-for="(cp,id) in cps" class="cp">
+                <div class="head">
+                    <table cellspacing="1">
+                        <tr>
+                            <th>ID</th>
+                            <th width="160">state</th>
+                            <th>PID</th>
+                            <th>rss</th>
+                            <th>heapUsed</th>
+                            <th>online</th>
+                            <th>requested</th>
+                            <th>operation</th>
+                        </tr>
+                        <tr>
+                            <td>{{id}}</td>
+                            <td>{{data.cps[id].paused?"paused":"running"}}</td>
+                            <td>{{cp.data[0].pid}}</td>
+                            <td>{{bytesToSize(data.cps[id].rss)}}</td>
+                            <td>{{bytesToSize(data.cps[id].heapUsed)}}</td>
+                            <td>{{data.cps[id].online}}</td>
+                            <td>{{data.cps[id].requested}}</td>
+                            <td style="cursor: pointer" @click="kill(id)">KILL</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="frames">
+                    <div v-for="item in cp.data" class="frame" v-bind:style="{width:(100/logNum)+'%',opacity:item.opc}">
+                        <div class="rss"
+                             v-bind:style="{height:percent(item.rss),'background-color':percent(item.rss,true)>99?'#fa5050':'#6ca0ff'}"></div>
+                        <div class="heapUsed" v-bind:style="{height:percent(item.heapUsed)}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="console" @mouseenter="hover=true" @mouseleave="hover=false">
+            <div class="tags">
+                <div class="tag" v-bind:class="{active:active==='logs'}" @click="active='logs'">Logs</div>
+                <div class="tag" v-bind:class="{active:active==='terminal'}" @click="active='terminal'">Terminal</div>
+            </div>
+            <div class="cts">
+                <div class="clear" @click="clear">Clear</div>
+                <textarea id="logs" class="ct" v-show="active==='logs'" v-model="logs" readonly></textarea>
+                <textarea id="terminal" class="ct" v-show="active==='terminal'" v-model="terminal" readonly></textarea>
+                <textarea id="input" class="ct" v-show="active==='terminal'" @keyup.up="cmdLast" @keyup.down="cmdNext" @keyup.enter="sendCmd" autofocus
+                          v-model="input" spellcheck="false"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <table cellspacing="1">
+            <tr>
+                <td>Main Switch</td>
+                <td>
+                    <label for="radio-on">ON</label><input id="radio-on" type="radio" v-model="switcher" value="on">
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <label for="radio-off">OFF</label><input id="radio-off" type="radio" v-model="switcher" value="off">
+                </td>
+            </tr>
+            <tr>
+                <td>Memory Usage</td>
+                <td>
+                    free :{{bytesToSize(os.freemem)}} </br>
+                    total :{{bytesToSize(os.totalmem)}} </br>
+
+                    <div style="margin: 5px 10px"
+                         v-bind:style="{background:'linear-gradient(to right,green '+Math.floor(os.freemem/os.totalmem*100)+'%,gray '+Math.floor(os.freemem/os.totalmem*100)+'%,gray )'}">
+                        {{Math.floor(os.freemem/os.totalmem*100)}} %
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Standard Memory Usage</td>
+                <td>
+                    {{bytesToSize(size*100)}}<br/>
+                    <input type="range" min="671089" max="2684356" v-model="size">
+                </td>
+            </tr>
+            <tr>
+                <td>Particle Size</td>
+                <td>{{logNum}}<br/>
+                    <input type="range" min="5" max="200" v-model="logNum">
+                </td>
+            </tr>
+            <tr>
+                <td>Interval</td>
+                <td>
+                    {{itv}} <br/>
+                    <input type="range" min="100" max="2000" v-model="itv">
+                </td>
+            </tr>
+            <tr>
+                <td>Operation</td>
+                <td>
+                    <table style="background-color: transparent" cellspacing="1" border="0">
+                        <tr>
+                            <td class="btn" @click="pauseAll">Pause ALL</td>
+                        </tr>
+                        <tr>
+                            <td class="btn" @click="resumeAll">Resume ALL</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            token:"${token}",
+            logNum: 100,
+            itv: 1000,
+            size: 850000,//比例尺
+            cps: {},
+            os: {
+                totalmem: 0,
+                freemem: 0,
+            },
+            data: {},
+
+            //console
+            active: 'logs',
+            logs: '',
+            terminal: '',
+            input: '',
+            inputCache:[],
+            inputCacheIndex:0,
+            hover:false,
+
+            //switch
+            switcher: 'on'
+        },
+        methods: {
+            kill:function (id) {
+                var that=this;
+                if(confirm('Are you sure you want to KILL process ['+id+'] ?')){
+                    $.get('./ajaxGetKill', {id: id,token:that.token}, function (data) {
+                        if(data.state!=='success'){alert('error')}
+                    }, 'JSON');
+                }
+            },
+            cmdLast :function() {
+                this.inputCacheIndex--;
+                if(this.inputCache[this.inputCacheIndex]){
+                    this.input=this.inputCache[this.inputCacheIndex];
+                }else{
+                    this.inputCacheIndex++;
+                }
+
+            },
+            cmdNext :function() {
+                this.inputCacheIndex++;
+                if(this.inputCache[this.inputCacheIndex]){
+                    this.input=this.inputCache[this.inputCacheIndex];
+                }else{
+                    this.inputCacheIndex--;
+                }
+            },
+            sendCmd:function() {
+                var cmd = this.input;
+                if(this.inputCache.length>9){this.inputCache.shift()}
+                if ($.inArray(cmd, this.inputCache) === -1) {
+                    this.inputCache.push(cmd);
+                    this.inputCacheIndex=this.inputCache.length;
+                };
+                this.terminal += cmd;
+                this.input = '';
+                var that=this;
+                $.get('./ajaxGetCmd', {cmd: cmd,token:that.token}, function (data) {
+                    that.terminal += data.output;
+                    that.$nextTick(function () {
+                        var e = $("#terminal")[0];
+                        e.scrollTop = e.scrollHeight;
+                    })
+                }, 'JSON');
+            },
+            clear: function () {
+                this[this.active] = '';
+            },
+            bytesToSize: function (bytes) {
+                if (bytes === 0) return '0 B';
+                var k = 1024, // or 1024
+                    sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+                    i = Math.floor(Math.log(bytes) / Math.log(k));
+                return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+            },
+            percent: function (num, pureNum) {
+                var per = num / this.size;
+                if (!pureNum) {
+                    per = per.toPrecision(3) + "%"
+                }
+                return per;
+            },
+            refresh: function () {
+                var that = this;
+                setTimeout(function () {
+                    if (that.switcher === 'on') {
+                        $.get('./ajaxGetState', {token:that.token}, function (data) {
+                            that.os = data.os;
+                            var logs = data.logs;
+                            var ids = [];
+                            for (var id in data.cps) {
+                                ids.push(id);
+                                var cp = data.cps[id];
+                                cp.opc=Math.random()*0.3+0.7; //随机的透明度
+                                if (that.cps[id]) {
+                                    while (that.cps[id].data.length >= that.logNum) {
+                                        that.cps[id].data.shift();
+                                    }
+                                    that.cps[id].data.push(cp);
+                                } else {
+                                    that.cps[id] = {
+                                        data: [cp],
+                                    }
+                                }
+                                logs = logs.concat(data.cps[id].logs);
+                            }
+                            for (var i in that.cps) {
+                                if ($.inArray(i, ids) === -1) {
+                                    that.$delete(that.cps, i);
+                                }
+                            }
+                            that.data = data;//pre
+                            that.logs += logs.join('');
+                            that.$nextTick(function () {
+                                if(that.hover){return}
+                                var e1 = $("#logs")[0];
+                                e1.scrollTop = e1.scrollHeight;
+                            });
+                        }, 'JSON')
+                    }
+                    that.refresh()
+                }, that.itv);
+            },
+            pauseAll: function () {
+                $.get('./ajaxGetPause', {token:this.token}, function (data) {
+                    if (data.state !== 'success') {
+                        alert('error')
+                    }
+                }, 'JSON')
+            },
+            resumeAll: function () {
+                $.get('./ajaxGetResume', {token:this.token}, function (data) {
+                    if (data.state !== 'success') {
+                        alert('error')
+                    }
+                }, 'JSON')
+            },
+        },
+        created: function () {
+            this.refresh();
+        }
+    })
+</script>
+</body>
+</html>
