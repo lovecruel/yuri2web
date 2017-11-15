@@ -9,7 +9,7 @@ Web Server application.
 
 ## Version
 
-0.0.2
+0.1.0
 
 ## Progress
 
@@ -20,8 +20,23 @@ The official version is going to be online.
 
 ## Get Start
 
-Install modules `npm install yuri2js yuri2web`
-
+1. Install modules `npm install yuri2js yuri2web` .
+2. Create a simple file then run it.
+~~~
+const Web=require('yuri2web');
+let srv=new Web({
+    file:__filename,
+    port:8080,
+    worker:2,
+    password:'yuri2',
+    handle:async function (fd) {
+        require('http').createServer(function (req,res) {
+            res.end("hi~");
+        }).listen(fd)
+    }
+});
+srv.run();
+~~~
 
 ## Global Orders
 
@@ -32,6 +47,11 @@ Install modules `npm install yuri2js yuri2web`
 * document
 
 ## ChangeLog
+
+### v0.1.0
+
+* Single process mode
+* Chinese support
 
 ### v0.0.2
 

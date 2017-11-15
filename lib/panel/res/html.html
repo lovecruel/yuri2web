@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Yuri2web Panel</title>
     <script src="jquery-2.2.4.min.js/?token=${token}"></script>
+    <script src="lang.js/?token=${token}"></script>
     <script src="vue.min.js/?token=${token}"></script>
     <link rel="stylesheet" href="./main.css/?token=${token}"/>
 </head>
@@ -16,45 +17,50 @@
                     <table cellspacing="1">
                         <tr>
                             <th>ID</th>
-                            <th width="160">state</th>
+                            <th width="160">{{L("STATUS")}}</th>
+                            <th>{{L("CREATE_AT")}}</th>
                             <th>PID</th>
-                            <th>rss</th>
-                            <th>heapUsed</th>
-                            <th>online</th>
-                            <th>requested</th>
-                            <th>operation</th>
+                            <th>{{L("RSS")}}</th>
+                            <th>{{L("HEAP_USED")}}</th>
+                            <th>{{L("ONLINE")}}</th>
+                            <th>{{L("REQUESTED")}}</th>
+                            <th>{{L("OPERATION")}}</th>
                         </tr>
                         <tr>
                             <td>{{id}}</td>
-                            <td>{{data.cps[id].paused?"paused":"running"}}</td>
+                            <td>{{data.cps[id].paused?L("PAUSED"):L("RUNNING")}}</td>
+                            <td>{{timestampToDateStr(data.cps[id].createAt)}}</td>
                             <td>{{cp.data[0].pid}}</td>
                             <td>{{bytesToSize(data.cps[id].rss)}}</td>
                             <td>{{bytesToSize(data.cps[id].heapUsed)}}</td>
                             <td>{{data.cps[id].online}}</td>
                             <td>{{data.cps[id].requested}}</td>
-                            <td style="cursor: pointer" @click="kill(id)">KILL</td>
+                            <td style="cursor: pointer" @click="kill(id)">{{L("KILL")}}</td>
                         </tr>
                     </table>
                 </div>
                 <div class="frames">
                     <div v-for="item in cp.data" class="frame" v-bind:style="{width:(100/logNum)+'%',opacity:item.opc}">
-                        <div class="rss"
+                        <div class="rss" v-bind:title="bytesToSize(item.rss)"
                              v-bind:style="{height:percent(item.rss),'background-color':percent(item.rss,true)>99?'#fa5050':'#6ca0ff'}"></div>
-                        <div class="heapUsed" v-bind:style="{height:percent(item.heapUsed)}"></div>
+                        <div class="heapUsed" v-bind:style="{height:percent(item.heapUsed)}" v-bind:title="bytesToSize(item.heapUsed)"></div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="console" @mouseenter="hover=true" @mouseleave="hover=false">
             <div class="tags">
-                <div class="tag" v-bind:class="{active:active==='logs'}" @click="active='logs'">Logs</div>
-                <div class="tag" v-bind:class="{active:active==='terminal'}" @click="active='terminal'">Terminal</div>
+                <div class="tag" v-bind:class="{active:active==='logs'}" @click="active='logs'">{{L("LOGS")}}</div>
+                <div class="tag" v-bind:class="{active:active==='terminal'}" @click="active='terminal'">
+                    {{L("TERMINAL")}}
+                </div>
             </div>
             <div class="cts">
-                <div class="clear" @click="clear">Clear</div>
+                <div class="clear" @click="clear">{{L("CLEAR")}}</div>
                 <textarea id="logs" class="ct" v-show="active==='logs'" v-model="logs" readonly></textarea>
                 <textarea id="terminal" class="ct" v-show="active==='terminal'" v-model="terminal" readonly></textarea>
-                <textarea id="input" class="ct" v-show="active==='terminal'" @keyup.up="cmdLast" @keyup.down="cmdNext" @keyup.enter="sendCmd" autofocus
+                <textarea id="input" class="ct" v-show="active==='terminal'" @keyup.up="cmdLast" @keyup.down="cmdNext"
+                          @keyup.enter="sendCmd" autofocus
                           v-model="input" spellcheck="false"></textarea>
             </div>
         </div>
@@ -63,7 +69,17 @@
     <div class="panel">
         <table cellspacing="1">
             <tr>
-                <td>Main Switch</td>
+                <td>{{L("MAIN_STATUS")}}</td>
+                <td v-bind:style="{color:online?'#83f483':'red'}">
+                    {{online?L("ONLINE"):L("OFFLINE")}}
+                    <p v-if="online">
+                        {{L(["Create At","创建于"])}}
+                        {{timestampToDateStr(createAt)}}
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td>{{L("MAIN_SWITCH")}}</td>
                 <td>
                     <label for="radio-on">ON</label><input id="radio-on" type="radio" v-model="switcher" value="on">
                     &nbsp;&nbsp;&nbsp;&nbsp;
@@ -71,10 +87,10 @@
                 </td>
             </tr>
             <tr>
-                <td>Memory Usage</td>
+                <td>{{L("MEMORY_USAGE")}}</td>
                 <td>
-                    free :{{bytesToSize(os.freemem)}} </br>
-                    total :{{bytesToSize(os.totalmem)}} </br>
+                    {{L("FREE")}} :{{bytesToSize(os.freemem)}} </br>
+                    {{L("TOTAL")}} :{{bytesToSize(os.totalmem)}} </br>
 
                     <div style="margin: 5px 10px"
                          v-bind:style="{background:'linear-gradient(to right,green '+Math.floor(os.freemem/os.totalmem*100)+'%,gray '+Math.floor(os.freemem/os.totalmem*100)+'%,gray )'}">
@@ -83,34 +99,37 @@
                 </td>
             </tr>
             <tr>
-                <td>Standard Memory Usage</td>
+                <td>{{L("STANDARD_MEMORY_USAGE")}}</td>
                 <td>
                     {{bytesToSize(size*100)}}<br/>
                     <input type="range" min="671089" max="2684356" v-model="size">
                 </td>
             </tr>
             <tr>
-                <td>Particle Size</td>
+                <td>{{L("PARTICLE_SIZE")}}</td>
                 <td>{{logNum}}<br/>
                     <input type="range" min="5" max="200" v-model="logNum">
                 </td>
             </tr>
             <tr>
-                <td>Interval</td>
+                <td>{{L("INTERVAL")}}</td>
                 <td>
                     {{itv}} <br/>
                     <input type="range" min="100" max="2000" v-model="itv">
                 </td>
             </tr>
             <tr>
-                <td>Operation</td>
+                <td>{{L("OPERATION")}}</td>
                 <td>
                     <table style="background-color: transparent" cellspacing="1" border="0">
                         <tr>
-                            <td class="btn" @click="pauseAll">Pause ALL</td>
+                            <td class="btn" @click="pauseAll">{{L("PAUSE_ALL")}}</td>
                         </tr>
                         <tr>
-                            <td class="btn" @click="resumeAll">Resume ALL</td>
+                            <td class="btn" @click="resumeAll">{{L("RESUME_ALL")}}</td>
+                        </tr>
+                        <tr>
+                            <td class="btn" @click="closeAll">{{L("CLOSE_ALL")}}</td>
                         </tr>
                     </table>
                 </td>
@@ -123,7 +142,9 @@
     var app = new Vue({
         el: "#app",
         data: {
-            token:"${token}",
+            token: "${token}",
+            online: true,
+            createAt:new Date().getTime(),
             logNum: 100,
             itv: 1000,
             size: 850000,//比例尺
@@ -139,50 +160,62 @@
             logs: '',
             terminal: '',
             input: '',
-            inputCache:[],
-            inputCacheIndex:0,
-            hover:false,
+            inputCache: [],
+            inputCacheIndex: 0,
+            hover: false,
 
             //switch
             switcher: 'on'
         },
         methods: {
-            kill:function (id) {
-                var that=this;
-                if(confirm('Are you sure you want to KILL process ['+id+'] ?')){
-                    $.get('./ajaxGetKill', {id: id,token:that.token}, function (data) {
-                        if(data.state!=='success'){alert('error')}
+            timestampToDateStr:function(timestamp) {
+                var date=new Date(timestamp);
+                return date.toLocaleString();
+            },
+            kill: function (id) {
+                var that = this;
+                if (confirm(L("SURE_TO_KILL") + ' [' + id + '] ?')) {
+                    $.get('./ajaxGetKill', {id: id, token: that.token}, function (data) {
+                        if (data.state !== 'success') {
+                            alert('error')
+                        }
                     }, 'JSON');
                 }
             },
-            cmdLast :function() {
+            _removeLastChar: function (str) {
+                return str.substr(0, str.length - 1);
+            },
+            cmdLast: function () {
                 this.inputCacheIndex--;
-                if(this.inputCache[this.inputCacheIndex]){
-                    this.input=this.inputCache[this.inputCacheIndex];
-                }else{
+                if (this.inputCache[this.inputCacheIndex]) {
+                    this.input = this._removeLastChar(this.inputCache[this.inputCacheIndex]);
+                } else {
                     this.inputCacheIndex++;
                 }
 
             },
-            cmdNext :function() {
+            cmdNext: function () {
                 this.inputCacheIndex++;
-                if(this.inputCache[this.inputCacheIndex]){
-                    this.input=this.inputCache[this.inputCacheIndex];
-                }else{
+                if (this.inputCache[this.inputCacheIndex]) {
+                    this.input = this._removeLastChar(this.inputCache[this.inputCacheIndex]);
+                } else {
                     this.inputCacheIndex--;
                 }
             },
-            sendCmd:function() {
+            sendCmd: function () {
                 var cmd = this.input;
-                if(this.inputCache.length>9){this.inputCache.shift()}
+                if (this.inputCache.length > 9) {
+                    this.inputCache.shift()
+                }
                 if ($.inArray(cmd, this.inputCache) === -1) {
                     this.inputCache.push(cmd);
-                    this.inputCacheIndex=this.inputCache.length;
-                };
+                    this.inputCacheIndex = this.inputCache.length;
+                }
+                ;
                 this.terminal += cmd;
                 this.input = '';
-                var that=this;
-                $.get('./ajaxGetCmd', {cmd: cmd,token:that.token}, function (data) {
+                var that = this;
+                $.get('./ajaxGetCmd', {cmd: cmd, token: that.token}, function (data) {
                     that.terminal += data.output;
                     that.$nextTick(function () {
                         var e = $("#terminal")[0];
@@ -211,14 +244,14 @@
                 var that = this;
                 setTimeout(function () {
                     if (that.switcher === 'on') {
-                        $.get('./ajaxGetState', {token:that.token}, function (data) {
+                        $.get('./ajaxGetState', {token: that.token}, function (data) {
                             that.os = data.os;
                             var logs = data.logs;
                             var ids = [];
                             for (var id in data.cps) {
                                 ids.push(id);
                                 var cp = data.cps[id];
-                                cp.opc=Math.random()*0.3+0.7; //随机的透明度
+                                cp.opc = Math.random() * 0.3 + 0.7; //随机的透明度
                                 if (that.cps[id]) {
                                     while (that.cps[id].data.length >= that.logNum) {
                                         that.cps[id].data.shift();
@@ -239,7 +272,9 @@
                             that.data = data;//pre
                             that.logs += logs.join('');
                             that.$nextTick(function () {
-                                if(that.hover){return}
+                                if (that.hover) {
+                                    return
+                                }
                                 var e1 = $("#logs")[0];
                                 e1.scrollTop = e1.scrollHeight;
                             });
@@ -249,22 +284,53 @@
                 }, that.itv);
             },
             pauseAll: function () {
-                $.get('./ajaxGetPause', {token:this.token}, function (data) {
-                    if (data.state !== 'success') {
-                        alert('error')
-                    }
-                }, 'JSON')
+                if (confirm(L("SURE_TO_PAUSE_ALL"))) {
+                    $.get('./ajaxGetPause', {token: this.token}, function (data) {
+                        if (data.state !== 'success') {
+                            alert('error')
+                        }
+                    }, 'JSON')
+                }
             },
             resumeAll: function () {
-                $.get('./ajaxGetResume', {token:this.token}, function (data) {
-                    if (data.state !== 'success') {
-                        alert('error')
-                    }
-                }, 'JSON')
+                if (confirm(L("SURE_TO_RESUME_ALL"))) {
+                    $.get('./ajaxGetResume', {token: this.token}, function (data) {
+                        if (data.state !== 'success') {
+                            alert('error')
+                        }
+                    }, 'JSON')
+                }
             },
+            closeAll: function () {
+                if (confirm(L("SURE_TO_CLOSE_ALL"))) {
+                    $.get('./ajaxGetCloseAll', {token: this.token}, function (data) {
+                        if (data.state !== 'success') {
+                            alert('error')
+                        }
+                    }, 'JSON')
+                }
+            }
         },
         created: function () {
             this.refresh();
+            var that = this;
+            setInterval(function () {
+                $.ajax({
+                    type: "GET",
+                    url: "./ajaxGetPing",
+                    data: {token: that.token},
+                    dataType: "json",
+                    timeout: 2000,
+                    success: function (data) {
+                        that.online = true;
+                        that.createAt = data.createAt;
+                    },
+                    error: function () {
+                        that.online = false;
+                    }
+                });
+                console.clear();
+            }, 2000);
         }
     })
 </script>

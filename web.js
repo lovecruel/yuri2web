@@ -44,6 +44,14 @@ class App extends Basic {
 
     run() {
         const that = this;
+
+        if (that.opt.worker === false) {
+            //单进程模式，不启用worker
+            this._startServer(true);
+            return;
+        }
+
+        //多进程模式
         if (App.isSub()) {
             //监听eval的命令
             process.on('message', function (m) {
@@ -87,16 +95,15 @@ class App extends Basic {
             work({
                 app: that,
                 isSub: true,
-                handle:that.opt.handle,
+                handle: that.opt.handle,
             })
         } else {
             this._startServer();
         }
 
-
         //主进程
         if (that.isMaster()) {
-
+            that.runAt = new Date(); //记录启动时间
             //启动面板
             let err = require('./lib/panel/server')({port: that.opt.portPanel, app: that, password: that.opt.password});
             if (err) {
@@ -130,9 +137,18 @@ class App extends Basic {
         return !App.isSub() && this.opt.worker
     }
 
-    _startServer() {
+    _startServer(single = false) {
         console.log('app is running.');
         const that = this;
+
+        if(single){
+            //单进程模式
+            that.opt.handle(that.opt.port);
+            that.log(`website : http://localhost:` + that.opt.port + "/")
+            return ;
+        }
+
+        //多进程模式
         let tcpServer = net.createServer();
         tcpServer.on('tcp server error', function (err) {
             console.error(err);
