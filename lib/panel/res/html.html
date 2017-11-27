@@ -28,7 +28,7 @@
                         </tr>
                         <tr>
                             <td>{{id}}</td>
-                            <td>{{data.cps[id].paused?L("PAUSED"):L("RUNNING")}}</td>
+                            <td>{{data.cps[id].state}}</td>
                             <td>{{timestampToDateStr(data.cps[id].createAt)}}</td>
                             <td>{{cp.data[0].pid}}</td>
                             <td>{{bytesToSize(data.cps[id].rss)}}</td>
@@ -43,7 +43,8 @@
                     <div v-for="item in cp.data" class="frame" v-bind:style="{width:(100/logNum)+'%',opacity:item.opc}">
                         <div class="rss" v-bind:title="bytesToSize(item.rss)"
                              v-bind:style="{height:percent(item.rss),'background-color':percent(item.rss,true)>99?'#fa5050':'#6ca0ff'}"></div>
-                        <div class="heapUsed" v-bind:style="{height:percent(item.heapUsed)}" v-bind:title="bytesToSize(item.heapUsed)"></div>
+                        <div class="heapUsed" v-bind:style="{height:percent(item.heapUsed)}"
+                             v-bind:title="bytesToSize(item.heapUsed)"></div>
                     </div>
                 </div>
             </div>
@@ -123,10 +124,7 @@
                 <td>
                     <table style="background-color: transparent" cellspacing="1" border="0">
                         <tr>
-                            <td class="btn" @click="pauseAll">{{L("PAUSE_ALL")}}</td>
-                        </tr>
-                        <tr>
-                            <td class="btn" @click="resumeAll">{{L("RESUME_ALL")}}</td>
+                            <td class="btn" @click="sendAllClick">{{L("SEND_SIGN")}}</td>
                         </tr>
                         <tr>
                             <td class="btn" @click="closeAll">{{L("CLOSE_ALL")}}</td>
@@ -144,7 +142,7 @@
         data: {
             token: "${token}",
             online: true,
-            createAt:new Date().getTime(),
+            createAt: new Date().getTime(),
             logNum: 100,
             itv: 1000,
             size: 850000,//比例尺
@@ -168,8 +166,8 @@
             switcher: 'on'
         },
         methods: {
-            timestampToDateStr:function(timestamp) {
-                var date=new Date(timestamp);
+            timestampToDateStr: function (timestamp) {
+                var date = new Date(timestamp);
                 return date.toLocaleString();
             },
             kill: function (id) {
@@ -283,23 +281,13 @@
                     that.refresh()
                 }, that.itv);
             },
-            pauseAll: function () {
-                if (confirm(L("SURE_TO_PAUSE_ALL"))) {
-                    $.get('./ajaxGetPause', {token: this.token}, function (data) {
-                        if (data.state !== 'success') {
-                            alert('error')
-                        }
-                    }, 'JSON')
-                }
-            },
-            resumeAll: function () {
-                if (confirm(L("SURE_TO_RESUME_ALL"))) {
-                    $.get('./ajaxGetResume', {token: this.token}, function (data) {
-                        if (data.state !== 'success') {
-                            alert('error')
-                        }
-                    }, 'JSON')
-                }
+            sendAll: function (sign) {
+                //发送命令信号
+                $.get('./ajaxGetSendAll', {token: this.token,sign:sign}, function (data) {
+                    if (data.state !== 'success') {
+                        alert('error')
+                    }
+                }, 'JSON')
             },
             closeAll: function () {
                 if (confirm(L("SURE_TO_CLOSE_ALL"))) {
@@ -309,6 +297,10 @@
                         }
                     }, 'JSON')
                 }
+            },
+            sendAllClick:function () {
+                var sign=prompt(L("ATT_SIGN"));
+                if(sign) this.sendAll(sign)
             }
         },
         created: function () {

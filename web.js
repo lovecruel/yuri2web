@@ -15,8 +15,10 @@ class App extends Basic {
             worker: true,
             autoWorkerReboot: true,
             portPanel: 6753,//面板端口号
-            handle: null, //(fd)=>....
-            password: '', //面板的密码
+            ssl: false,//是否正在使用ssl
+            work: null, //(fd)=>....
+            terminal:false, //是否启用面板的控制台
+            stateHandle: ()=>{}, //命令响应函数
         };
         this.opt = yuri2.jsonMerge(this.opt, opt);
         if (this.opt.worker === true) {
@@ -95,7 +97,7 @@ class App extends Basic {
             work({
                 app: that,
                 isSub: true,
-                handle: that.opt.handle,
+                work: that.opt.work,
             })
         } else {
             this._startServer();
@@ -109,9 +111,7 @@ class App extends Basic {
             if (err) {
                 that.log(`panel init failed(check port ${that.opt.portPanel})`)
             } else {
-                let psw = that.opt.password;
-                let token = psw ? yuri2.yuri2String.md5(psw + psw) : "null";
-                that.log(`panel : http://localhost:` + that.opt.portPanel + "/?token=" + token)
+                that.log(`panel : http://localhost:` + that.opt.portPanel );
             }
 
         }
@@ -143,7 +143,7 @@ class App extends Basic {
 
         if(single){
             //单进程模式
-            that.opt.handle(that.opt.port);
+            that.opt.work(that.opt.port,{});
             that.log(`website : http://localhost:` + that.opt.port + "/")
             return ;
         }
