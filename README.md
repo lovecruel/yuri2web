@@ -8,7 +8,8 @@ This is a very easy to use Node.js package to make your web service code take ad
 
 
 * 项目地址 Main Project https://github.com/yuri2peter/yuri2web
-* 问题反馈 https://github.com/yuri2peter/yuri2web/issues
+* 问题反馈 Issues https://github.com/yuri2peter/yuri2web/issues
+* 开源中国 https://www.oschina.net/p/yuri2web
 * NPM https://www.npmjs.com/package/yuri2web
 * 其它项目 All Projects https://github.com/yuri2peter
 * Blog https://yuri2.cn
