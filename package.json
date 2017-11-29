@@ -1,6 +1,6 @@
 {
   "name": "yuri2web",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "web server",
   "main": "web.js",
   "scripts": {

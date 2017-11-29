@@ -1,7 +1,7 @@
 # yuri2web
-这是一个很易用的工具让你的web应用能利用上所有的服务器CPU。
+这是一个很易用的工具让你的web应用能利用上所有的服务器CPU,从而提升性能。
 
-This is a very simple tool to make your web service code take advantage of all the server CPU.
+This is a very simple tool to make your web service code take advantage of all the server CPU to improve performance.
 
 ![Image text](https://github.com/yuri2peter/yuri2web/raw/master/docRes/panel.png)
 
@@ -14,7 +14,7 @@ This is a very simple tool to make your web service code take advantage of all t
 
 ## 版本 Version
 
-0.9.2 Beta
+0.9.3 Beta
 
 ## 为什么我需要它？Why I Need This?
 * 理论上支持任何需要监听某一个网络端口的应用，实测兼容常见的web框架（如express,koa）。
@@ -115,7 +115,7 @@ let srv=new Web({
      * */
     work:async function (fd,web) {
         web.commandHandle=function (command) {
-            web.log("sign received : "+command);
+            web.log("command received : "+command);
         };
         web.stateHandle=function () {
             return "unclear";
