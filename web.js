@@ -18,7 +18,7 @@ class App extends Basic {
             ssl: false,//是否正在使用ssl
             work: null, //(fd)=>....
             terminal:false, //是否启用面板的控制台
-            stateHandle: ()=>{}, //命令响应函数
+            commandHandle: ()=>{}, //命令响应函数
         };
         this.opt = yuri2.jsonMerge(this.opt, opt);
         if (this.opt.worker === true) {
@@ -182,7 +182,8 @@ class App extends Basic {
             that.log(`worker[${id}] exited.CODE ${code}; SIGNAL ${signal}`);
             delete that.cps[id];// 删除进程池
             if (that.opt.autoWorkerReboot) {
-                that.log(`It will be reborn in 3 sec.`);
+                that.emit("worker_aborted",id,code,signal); //抛出一个事件
+                that.log(`Restarting worker...`);
                 that._startWorker(++that.workerCounter, that.fd);
             }
         });
